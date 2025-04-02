@@ -16,24 +16,35 @@ def upload_file(file_path: str):
     shard_locations = {}
     
     for idx, shard_id in enumerate(shard_ids):
-        node = hasher.get_node(shard_id)
+        replica_nodes = hasher.get_nodes(shard_id, replicas=3)
         shard_path = os.path.join(project_root, "shards", shard_id)  
-        
-        try:
-            with open(shard_path, "rb") as f:
-                response = requests.put(f"{node}/shard/{shard_id}", data=f)
-                if response.status_code == 200:
-                    print(f"Uploaded {shard_id[:8]}... to {node}")
-                    shard_locations[str(idx)] = [node]
-                else:
-                    print(f"Failed to upload {shard_id[:8]}... to {node}. Status: {response.status_code}")
-        except Exception as e:
-            print(f"Error uploading {shard_id[:8]}...: {str(e)}")
-            continue
+        successful_nodes = []
+
+        for node in replica_nodes:
+            try:
+                with open(shard_path, "rb") as f:
+                    response = requests.put(
+                        f"{node}/shard/{shard_id}",
+                        data=f
+                    )
+                    if response.status_code == 200:
+                        print(f"Uploaded {shard_id[:8]}... to {node}")
+                        successful_nodes.append(node)
+                    else:
+                        print(f"Failed to upload {shard_id[:8]}... to {node}. Status: {response.status_code}")
+
+            except Exception as e:
+                print(f"Error uploading {shard_id[:8]}... to {node}: {str(e)}")
+
+            if successful_nodes:
+                shard_locations[str(idx)] = successful_nodes
+            else:
+                print(f"All replicas failed for shard {shard_id[:8]}...")
+                continue
 
     metadata = {
         "shards": shard_locations,
-        "replica_count": 1
+        "replica_count": 3
     }
     
     try:

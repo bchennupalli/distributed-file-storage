@@ -21,4 +21,15 @@ class ConsistentHasher:
     def _hash(self, key: str) -> int:
         return int(hashlib.md5(key.encode()).hexdigest(), 16)
     
+    def get_nodes(self, shard_id: str, replicas: int) -> list[str]:
+        key = self._hash(shard_id)
+        idx = bisect(self.ring, key) % len(self.ring)
+        nodes = []
+        for i in range(replicas):
+            pos = (idx + i) % len(self.ring)
+            node = self.node_map[self.ring[pos]]
+            if node not in nodes:
+                nodes.append(node)
+        return nodes
+    
     

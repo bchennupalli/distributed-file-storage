@@ -2,15 +2,14 @@ from flask import Flask, request, send_file
 import os
 
 app = Flask(__name__)
-
-STORAGE_DIR = os.path.join(os.getcwd(), 'storage')
+port = os.environ.get('PORT', "5001")
+STORAGE_DIR = os.path.join(os.getcwd(), f'storage_{port}')
 
 @app.route('/shard/<shard_id>', methods=['PUT'])
 def upload_shard(shard_id):
-    shard_data = request.data
     os.makedirs(STORAGE_DIR, exist_ok=True)
     with open(os.path.join(STORAGE_DIR, shard_id), 'wb') as f:
-        f.write(shard_data)
+        f.write(request.data)
     return {"status": "success", "shard_id": shard_id}
 
 @app.route('/shard/<shard_id>', methods=['GET'])
