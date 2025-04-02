@@ -1,4 +1,5 @@
 from bisect import bisect
+import hashlib
 
 class ConsistentHasher:
     def __init__(self, nodes: list[str], replicas: int = 3):
